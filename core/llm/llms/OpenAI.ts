@@ -209,10 +209,29 @@ class OpenAI extends BaseLLM {
       stream: true,
     };
     // Empty messages cause an error in LM Studio
-    body.messages = body.messages.map((m) => ({
+    console.log(options);
+    const modelName = options.model;
+    console.log(modelName);
+    const messagesCopy = modelName.startsWith("deepseek") ? messages[0].content : messages;
+    if (modelName.startsWith("deepseek")){
+      if (messages.length === 1) {
+        await this.fetch(this._getEndpoint("chat/clear_context"), {
+          method: "POST",
+          headers: this._getHeaders(),
+          body: JSON.stringify({
+            append_welcome_message: false,
+            model_class: modelName
+          })
+        });
+      }
+      delete body.messages;
+      body.message = messages[messages.length-1].content;
+    } else {
+      body.messages = body.messages.map((m) => ({
       ...m,
       content: m.content === "" ? " " : m.content,
-    })) as any;
+    })) as any; 
+    }
     const response = await this.fetch(this._getEndpoint("chat/completions"), {
       method: "POST",
       headers: this._getHeaders(),
